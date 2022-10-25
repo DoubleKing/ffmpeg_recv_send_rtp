@@ -30,15 +30,15 @@ cv::Mat avframeToCvmat(const AVFrame * frame)
 {  
 	static int i = 0;
 	char filename[128]="";
-    int width = frame->width;  
-    int height = frame->height;  
-    cv::Mat image(height, width, CV_8UC3);  
-    int cvLinesizes[1];  
-    cvLinesizes[0] = image.step1();  
-    SwsContext* conversion = sws_getContext(width, height, (AVPixelFormat) frame->format, width, height, AVPixelFormat::AV_PIX_FMT_BGR24, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+	int width = frame->width;  
+	int height = frame->height;  
+	cv::Mat image(height, width, CV_8UC3);  
+	int cvLinesizes[1];  
+	cvLinesizes[0] = image.step1();  
+	SwsContext* conversion = sws_getContext(width, height, (AVPixelFormat) frame->format, width, height, AVPixelFormat::AV_PIX_FMT_BGR24, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 	//SwsContext* conversion = sws_getContext(width, height, (AVPixelFormat) frame->format, width, height, AVPixelFormat::AV_PIX_FMT_BGR24, SWS_BICUBIC, NULL, NULL, NULL);
-    sws_scale(conversion, frame->data, frame->linesize, 0, height, &image.data, cvLinesizes);  
-    sws_freeContext(conversion);
+	sws_scale(conversion, frame->data, frame->linesize, 0, height, &image.data, cvLinesizes);  
+	sws_freeContext(conversion);
 
 	if(i < 1200)
 	{
@@ -66,7 +66,7 @@ cv::Mat avframeToCvmat(const AVFrame * frame)
 	}
 
 
-    i++;
+	i++;
 	//sprintf(filename,"cv%d.jpg", i++);
 	//cv::imwrite(filename, image);
 	
@@ -77,60 +77,60 @@ cv::Mat avframeToCvmat(const AVFrame * frame)
 //cv::Mat 转 AVFrame 
 //不能在原视频帧avframe上直接修改，av_frame_is_writable会返回0，表示不可写。
 /* AVFrame* cvmatToAvframe(cv::Mat* image, AVFrame * frame){  
-    int width = image->cols;  
-    int height = image->rows;  
-    int cvLinesizes[4];
+	int width = image->cols;  
+	int height = image->rows;  
+	int cvLinesizes[4];
 	memset(cvLinesizes,0,sizeof(cvLinesizes));
-    cvLinesizes[0] = image->step1();
+	cvLinesizes[0] = image->step1();
 	printf("av_frame_is_writable : %d\n",av_frame_is_writable(frame));
-    if (frame == NULL){  
-        frame = av_frame_alloc();  
-        av_image_alloc(frame->data, frame->linesize, width, height, AVPixelFormat::AV_PIX_FMT_YUV420P, 1); 
+	if (frame == NULL){  
+		frame = av_frame_alloc();  
+		av_image_alloc(frame->data, frame->linesize, width, height, AVPixelFormat::AV_PIX_FMT_YUV420P, 1); 
 		frame->format = AVPixelFormat::AV_PIX_FMT_YUV420P;
-    }
-    
-    SwsContext* conversion = sws_getContext(width, height, AVPixelFormat::AV_PIX_FMT_BGR24, width, height, (AVPixelFormat) frame->format, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+	}
+	
+	SwsContext* conversion = sws_getContext(width, height, AVPixelFormat::AV_PIX_FMT_BGR24, width, height, (AVPixelFormat) frame->format, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 	//SwsContext* conversion = sws_getContext(width, height, AVPixelFormat::AV_PIX_FMT_BGR24, width, height, (AVPixelFormat) frame->format, SWS_BICUBIC, NULL, NULL, NULL);
-    sws_scale(conversion, &image->data, cvLinesizes , 0, height, frame->data, frame->linesize);  
-    sws_freeContext(conversion);
-    return  frame;  
+	sws_scale(conversion, &image->data, cvLinesizes , 0, height, frame->data, frame->linesize);  
+	sws_freeContext(conversion);
+	return  frame;  
 } */
 
 //使用av_image_alloc申请空间，需要用av_freep释放，不能直接用av_frame_free直接释放avframe，否则内存泄漏。
 AVFrame* cvmat_to_avframe(const cv::Mat& src, int to_pix_fmt)
 {
-    uint8_t *src_data[4]/*, *dst_data[4]*/;
-    int src_linesize[4]/*, dst_linesize[4]*/;
-    int src_w = 320, src_h = 240, dst_w, dst_h;
+	uint8_t *src_data[4]/*, *dst_data[4]*/;
+	int src_linesize[4]/*, dst_linesize[4]*/;
+	int src_w = 320, src_h = 240, dst_w, dst_h;
 
-    enum AVPixelFormat src_pix_fmt = AV_PIX_FMT_BGR24;
-    enum AVPixelFormat dst_pix_fmt = (enum AVPixelFormat)to_pix_fmt;
-    struct SwsContext *convert_ctx = NULL;
+	enum AVPixelFormat src_pix_fmt = AV_PIX_FMT_BGR24;
+	enum AVPixelFormat dst_pix_fmt = (enum AVPixelFormat)to_pix_fmt;
+	struct SwsContext *convert_ctx = NULL;
 
-    src_w = dst_w = src.cols;
-    src_h = dst_h = src.rows;
+	src_w = dst_w = src.cols;
+	src_h = dst_h = src.rows;
 
-    convert_ctx = sws_getContext(src_w, src_h, src_pix_fmt, dst_w, dst_h, (enum AVPixelFormat)dst_pix_fmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+	convert_ctx = sws_getContext(src_w, src_h, src_pix_fmt, dst_w, dst_h, (enum AVPixelFormat)dst_pix_fmt, SWS_FAST_BILINEAR, NULL, NULL, NULL);
 	//convert_ctx = sws_getContext(src_w, src_h, src_pix_fmt, dst_w, dst_h, (enum AVPixelFormat)dst_pix_fmt, SWS_BICUBIC, NULL, NULL, NULL);
-    if (nullptr == convert_ctx) {
-        printf("sws_getContext failed!");
-        return nullptr;
-    }
+	if (nullptr == convert_ctx) {
+		printf("sws_getContext failed!");
+		return nullptr;
+	}
 
-    av_image_fill_arrays(src_data, src_linesize, src.data, src_pix_fmt, src_w, src_h, 1);
+	av_image_fill_arrays(src_data, src_linesize, src.data, src_pix_fmt, src_w, src_h, 1);
 
-    AVFrame *dst = av_frame_alloc();
-    av_image_alloc(dst->data, dst->linesize, dst_w, dst_h, (enum AVPixelFormat) dst_pix_fmt, 1);
+	AVFrame *dst = av_frame_alloc();
+	av_image_alloc(dst->data, dst->linesize, dst_w, dst_h, (enum AVPixelFormat) dst_pix_fmt, 1);
 
-    dst->format = dst_pix_fmt;
-    dst->width = dst_w;
-    dst->height = dst_h;
+	dst->format = dst_pix_fmt;
+	dst->width = dst_w;
+	dst->height = dst_h;
 
-    int ret = sws_scale(convert_ctx, src_data, src_linesize, 0, dst_h,
-        dst->data, dst->linesize);
-    if (ret < 0) {
-        printf("sws_scale err\n");
-    }
+	int ret = sws_scale(convert_ctx, src_data, src_linesize, 0, dst_h,
+		dst->data, dst->linesize);
+	if (ret < 0) {
+		printf("sws_scale err\n");
+	}
 
     sws_freeContext(convert_ctx);
 
@@ -139,93 +139,93 @@ AVFrame* cvmat_to_avframe(const cv::Mat& src, int to_pix_fmt)
 /* 
 int saveAsJPEG(AVFrame* pFrame, int width, int height, int index)
 {
-    
-    char out_file[256] = {0};
-    snprintf(out_file, sizeof(out_file), "%s%d.jpg", "ff", index);
-    AVFormatContext* pFormatCtx = avformat_alloc_context();
-    pFormatCtx->oformat = av_guess_format("mjpeg", NULL, NULL);
-    if( avio_open(&pFormatCtx->pb, out_file, AVIO_FLAG_READ_WRITE) < 0)
-    {
-    
-        printf("Couldn't open output file.");
-        return -1;
-    }
-    AVStream* pAVStream = avformat_new_stream(pFormatCtx, 0);
-    if( pAVStream == NULL )
-    {
-    
-        return -1;
-    }
-    AVCodecContext* pCodecCtx = pAVStream->codec;
-    pCodecCtx->codec_id   = pFormatCtx->oformat->video_codec;
-    pCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
-    pCodecCtx->pix_fmt    = AV_PIX_FMT_YUVJ420P;
-    pCodecCtx->width      = pFrame->width;
-    pCodecCtx->height     = pFrame->height;
-    pCodecCtx->time_base.num = 1;
-    pCodecCtx->time_base.den = 25;
-    //打印输出相关信息
-    av_dump_format(pFormatCtx, 0, out_file, 1);
-    //================================== 查找编码器 ==================================//
-    AVCodec* pCodec = avcodec_find_encoder(pCodecCtx->codec_id);
-    if( !pCodec )
-    {
-    
-        printf("Codec not found.");
-        return -1;
-    }
-    if( avcodec_open2(pCodecCtx, pCodec, NULL) < 0 )
-    {
-    
-        printf("Could not open codec.");
-        return -1;
-    }
-    //================================Write Header ===============================//
-    avformat_write_header(pFormatCtx, NULL);
-    int y_size = pCodecCtx->width * pCodecCtx->height;
-    AVPacket pkt;
-    av_new_packet(&pkt, y_size * 3);
+	
+	char out_file[256] = {0};
+	snprintf(out_file, sizeof(out_file), "%s%d.jpg", "ff", index);
+	AVFormatContext* pFormatCtx = avformat_alloc_context();
+	pFormatCtx->oformat = av_guess_format("mjpeg", NULL, NULL);
+	if( avio_open(&pFormatCtx->pb, out_file, AVIO_FLAG_READ_WRITE) < 0)
+	{
+	
+		printf("Couldn't open output file.");
+		return -1;
+	}
+	AVStream* pAVStream = avformat_new_stream(pFormatCtx, 0);
+	if( pAVStream == NULL )
+	{
+	
+		return -1;
+	}
+	AVCodecContext* pCodecCtx = pAVStream->codec;
+	pCodecCtx->codec_id   = pFormatCtx->oformat->video_codec;
+	pCodecCtx->codec_type = AVMEDIA_TYPE_VIDEO;
+	pCodecCtx->pix_fmt    = AV_PIX_FMT_YUVJ420P;
+	pCodecCtx->width      = pFrame->width;
+	pCodecCtx->height     = pFrame->height;
+	pCodecCtx->time_base.num = 1;
+	pCodecCtx->time_base.den = 25;
+	//打印输出相关信息
+	av_dump_format(pFormatCtx, 0, out_file, 1);
+	//================================== 查找编码器 ==================================//
+	AVCodec* pCodec = avcodec_find_encoder(pCodecCtx->codec_id);
+	if( !pCodec )
+	{
+	
+		printf("Codec not found.");
+		return -1;
+	}
+	if( avcodec_open2(pCodecCtx, pCodec, NULL) < 0 )
+	{
+	
+		printf("Could not open codec.");
+		return -1;
+	}
+	//================================Write Header ===============================//
+	avformat_write_header(pFormatCtx, NULL);
+	int y_size = pCodecCtx->width * pCodecCtx->height;
+	AVPacket pkt;
+	av_new_packet(&pkt, y_size * 3);
 
-    //
-    int got_picture = 0;
-    int ret = avcodec_encode_video2(pCodecCtx, &pkt, pFrame, &got_picture);
-    if( ret < 0 )
-    {
-    
-        printf("Encode Error.\n");
-        return -1;
-    }
-    if( got_picture == 1 )
-    {
-    
-        pkt.stream_index = pAVStream->index;
-        ret = av_write_frame(pFormatCtx, &pkt);
-    }
-    av_free_packet(&pkt);
-    av_write_trailer(pFormatCtx);
-    if( pAVStream )
-    {
-    
-        avcodec_close(pAVStream->codec);
-    }
-    avio_close(pFormatCtx->pb);
-    avformat_free_context(pFormatCtx);
-    return 0;
+	//
+	int got_picture = 0;
+	int ret = avcodec_encode_video2(pCodecCtx, &pkt, pFrame, &got_picture);
+	if( ret < 0 )
+	{
+	
+		printf("Encode Error.\n");
+		return -1;
+	}
+	if( got_picture == 1 )
+	{
+	
+		pkt.stream_index = pAVStream->index;
+		ret = av_write_frame(pFormatCtx, &pkt);
+	}
+	av_free_packet(&pkt);
+	av_write_trailer(pFormatCtx);
+	if( pAVStream )
+	{
+	
+		avcodec_close(pAVStream->codec);
+	}
+	avio_close(pFormatCtx->pb);
+	avformat_free_context(pFormatCtx);
+	return 0;
 }
  */
 int main(int argc, char * argv[])
 {
 	
 	cv::Mat srcSignImage = cv::imread("./sign.jpg", cv::IMREAD_COLOR);
-    resize(srcSignImage, signImage, cv::Size(480, 200));
+	resize(srcSignImage, signImage, cv::Size(480, 200));
 	backgroundImage = cv::imread("./background.jpg", cv::IMREAD_COLOR);
 	
 
 
 	
-   
 	
-    char					buffer[1280] = {0};
+	
+	char					buffer[1280] = {0};
 	char					port_v[10] = {0};
 	char					port_a[10] = {0};
 	char					sdp_file_name[128] = {0};
@@ -240,30 +240,30 @@ int main(int argc, char * argv[])
 	int got_frame;
  
 	//初始化输入输出上下文 
-    AVFormatContext     *ofmt_ctx_v=NULL;
-    AVStream *out_stream = NULL;
+	AVFormatContext     *ofmt_ctx_v=NULL;
+	AVStream *out_stream = NULL;
 	AVCodec  *enc = NULL;
 	AVCodecContext *enc_ctx=NULL;
  
 	AVFormatContext 	*p_ifmt_ctx_v = avformat_alloc_context();
-    AVInputFormat 		*p_ifmt_v = NULL;
+	AVInputFormat 		*p_ifmt_v = NULL;
 	AVCodecContext      *dec_ctx;
-    
-    p_ifmt_ctx_v ->flags |= AVFMT_NOFILE;
-    //添加白名单，这里很重要，如果不申请内存，在avformat_close_input中会宕
+	
+	p_ifmt_ctx_v ->flags |= AVFMT_NOFILE;
+	//添加白名单，这里很重要，如果不申请内存，在avformat_close_input中会宕
 	p_ifmt_ctx_v ->protocol_whitelist = (char*)av_malloc(sizeof("file,udp,rtp"));
 	memcpy(p_ifmt_ctx_v ->protocol_whitelist,"file,udp,rtp",sizeof("file,udp,rtp"));
  
-    //输入的文件格式为sdp
+	//输入的文件格式为sdp
 	p_ifmt_v = av_find_input_format("sdp");
  
-    //av_register_all();
+	//av_register_all();
 	//avfilter_register_all();
 	avformat_network_init();
 
 	strcpy(sdp_file_name,"video.sdp");
  
-    //video.sdp  文件内容
+	//video.sdp  文件内容
 	/*
 	v=0
 	o=- 0 0 IN IP4 127.0.0.1
@@ -277,17 +277,17 @@ int main(int argc, char * argv[])
 	a=fmtp:96 packetization-mode=1
 	*/
  
-    if ((ret = avformat_open_input(&p_ifmt_ctx_v , sdp_file_name, p_ifmt_v , NULL)) != 0) 
+	if ((ret = avformat_open_input(&p_ifmt_ctx_v , sdp_file_name, p_ifmt_v , NULL)) != 0) 
 	{
-        printf( "Cannot open p_ifmt_ctx_v file \n");
+		printf( "Cannot open p_ifmt_ctx_v file \n");
 		return -1;
-    }
+	}
 	if ((ret = avformat_find_stream_info(p_ifmt_ctx_v, NULL)) < 0) 
 	{
-        printf( "Cannot find ifmt_ctx_v stream information\n");
+		printf( "Cannot find ifmt_ctx_v stream information\n");
 		
-        return -1;
-    } 
+		return -1;
+	} 
 	for (i = 0; i < p_ifmt_ctx_v->nb_streams; i++) {
 		AVStream *stream = p_ifmt_ctx_v->streams[i];
 		if(stream->codecpar->codec_type != AVMEDIA_TYPE_VIDEO)
@@ -387,15 +387,15 @@ int main(int argc, char * argv[])
 	//printf("!!!!!!!!!!!!!!!!!!!enc_ctx time_base = %d/%d\n",channel->enc_ctx->time_base.num,channel->enc_ctx->time_base.den);
 	//printf("!!!!!!!!!!!!!!!!!!!dec_ctx time_base = %d/%d\n",channel->dec_ctx->time_base.num,channel->dec_ctx->time_base.den);
 	
-    if (!(ofmt_ctx_v->oformat->flags & AVFMT_NOFILE)) {
-        ret = avio_open(&ofmt_ctx_v->pb, "rtp://192.168.101.144:5004", AVIO_FLAG_WRITE);
-        if (ret < 0) {
+	if (!(ofmt_ctx_v->oformat->flags & AVFMT_NOFILE)) {
+		ret = avio_open(&ofmt_ctx_v->pb, "rtp://192.168.101.144:5004", AVIO_FLAG_WRITE);
+		if (ret < 0) {
 			printf("avio_open error \n");
 			return -1;
 		}
 	}
 	ret = avformat_write_header(ofmt_ctx_v, NULL);
-    if (ret < 0) {
+	if (ret < 0) {
 		printf("avformat_write_header error \n");
 		return -1;
 	}
