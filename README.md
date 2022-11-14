@@ -18,7 +18,7 @@ ffmpeg     -re     -fflags +genpts     -i 111.mp4     -an     -c:v libx264     -
 
 ffplay.exe -protocol_whitelist file,rtp,udp   -i video.sdp
 
-也可以用vlc等工具播放
+也可以用vlc等工具播放。
 
 
 
