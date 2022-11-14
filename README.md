@@ -27,3 +27,9 @@ ffplay.exe -protocol_whitelist file,rtp,udp   -i video.sdp
 3.在cv::Mat 转为avframe 时，不能直接使用原avframe，需重新alloc。因为使用av_frame_is_writable返回1时才可编辑帧，否则不可编辑。
 
 4.使用av_image_alloc申请空间，需要用av_freep释放，不能直接用av_frame_free直接释放avframe，否则内存泄漏。
+
+5.cv::Mat 转为avframe 时，注意cv::Mat深浅拷贝。例如：
+
+cv::Rect rect(640,0,480,1040);
+cv::Mat image_ori = image(rect);
+return image_ori.clone();

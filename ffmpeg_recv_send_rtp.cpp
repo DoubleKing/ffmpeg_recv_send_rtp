@@ -21,10 +21,12 @@ extern "C" {
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include <unistd.h>
+#include <iostream>
 
 using namespace cv;
 cv::Mat signImage;
 cv::Mat backgroundImage;
+cv::VideoCapture capture;
 //AVFrame 转 cv::mat  
 cv::Mat avframeToCvmat(const AVFrame * frame)  
 {  
@@ -39,7 +41,83 @@ cv::Mat avframeToCvmat(const AVFrame * frame)
 	//SwsContext* conversion = sws_getContext(width, height, (AVPixelFormat) frame->format, width, height, AVPixelFormat::AV_PIX_FMT_BGR24, SWS_BICUBIC, NULL, NULL, NULL);
 	sws_scale(conversion, frame->data, frame->linesize, 0, height, &image.data, cvLinesizes);  
 	sws_freeContext(conversion);
+	
+	
+	cv::Mat mp4Frame;
+	bool ret = capture.read(mp4Frame);
+	
+	if(ret)
+	{
+		//绿色背景替换
+		cv::Rect rect(620,0,640,1080);
+		cv::Mat image_ori = image(rect);
+		
+		cv::Mat HSV, mask;
+		cv::Mat resizeMask,resizeImageOri;
+		//绿色HSV颜色分量范围
+		int hmin = 35, smin = 43, vmin = 46; 
+		int hmax = 77, smax = 255, vmax = 255;
+		cvtColor(image_ori, HSV, COLOR_BGR2HSV);   //将原图转换成HSV色彩空间
 
+		//经过inRange API处理，输出一张二值图像，即将前景从绿幕中扣出来啦
+		inRange(HSV, Scalar(hmin, smin, vmin), Scalar(hmax, smax, vmax), mask);
+		bitwise_not(mask,mask);
+		//cv::imwrite("mask.jpg", mask);
+		resize(mask, resizeMask, cv::Size(160, 270));
+		resize(image_ori, resizeImageOri, cv::Size(160, 270));
+		
+		cv::Rect roi_rect = cv::Rect(0, 270, resizeImageOri.cols, resizeImageOri.rows);
+		resizeImageOri.copyTo(mp4Frame(roi_rect), resizeMask);
+		image = mp4Frame;
+	}
+	else{
+		
+		cv::Rect rect(640,0,480,1040);
+		cv::Mat image_ori = image(rect);
+		return image_ori.clone();
+		//cv::imwrite("image_ori.jpg", image_ori);
+		//return image_ori;
+	}
+
+/*	//视频 圆形右下角
+	cv::Mat mp4Frame;
+	bool ret = capture.read(mp4Frame);
+	
+	if(ret)
+	{
+		cv::Mat roi;
+		cv::Mat resized_srcImg, resizeRoi;
+		cv::Mat resized_mp4Img;
+
+		roi = Mat::zeros(image.size(), CV_8UC1);
+
+		resize(mp4Frame, resized_mp4Img, cv::Size(width, height));
+		resize(image, resized_srcImg, cv::Size(180, 320));
+		circle(roi, Point(320, 640), 320, CV_RGB(255, 255, 255), -1);//mask建立
+		resize(roi, resizeRoi, cv::Size(180, 320));
+
+		cv::Rect roi_rect = cv::Rect(resized_mp4Img.cols-180, resized_mp4Img.rows-320, resizeRoi.cols, resizeRoi.rows);
+		resized_srcImg.copyTo(resized_mp4Img(roi_rect), resizeRoi);
+		image = resized_mp4Img;
+	}
+*/	
+/*  //长方形左下角
+	if(ret)
+	{
+		//printf("capture.read sucess!!!!!!\n");
+		
+		
+		cv::Mat resized_srcImg;
+		cv::Mat resized_mp4Img;
+		resize(mp4Frame, resized_mp4Img, cv::Size(width, height));
+		resize(image, resized_srcImg, cv::Size(90, 160));
+		cv::Rect roi_rect = cv::Rect(resized_mp4Img.cols-90, resized_mp4Img.rows-160, resized_srcImg.cols, resized_srcImg.rows);
+		resized_srcImg.copyTo(resized_mp4Img(roi_rect));
+		image = resized_mp4Img;
+	}
+*/	
+
+/*
 	if(i < 1200)
 	{
 		//画线
@@ -64,11 +142,11 @@ cv::Mat avframeToCvmat(const AVFrame * frame)
 		resized_srcImg.copyTo(backgroundImage(roi_rect));
 		image = backgroundImage;
 	}
-
+*/
 
 	i++;
 	//sprintf(filename,"cv%d.jpg", i++);
-	//cv::imwrite(filename, image);
+	//cv::imwrite(filename, image_ori);
 	
     return image;  
 }
@@ -118,6 +196,7 @@ AVFrame* cvmat_to_avframe(const cv::Mat& src, int to_pix_fmt)
 	}
 
 	av_image_fill_arrays(src_data, src_linesize, src.data, src_pix_fmt, src_w, src_h, 1);
+	//cv::imwrite("image_ori.jpg", src);
 
 	AVFrame *dst = av_frame_alloc();
 	av_image_alloc(dst->data, dst->linesize, dst_w, dst_h, (enum AVPixelFormat) dst_pix_fmt, 1);
@@ -219,8 +298,10 @@ int main(int argc, char * argv[])
 	cv::Mat srcSignImage = cv::imread("./sign.jpg", cv::IMREAD_COLOR);
 	resize(srcSignImage, signImage, cv::Size(480, 200));
 	backgroundImage = cv::imread("./background.jpg", cv::IMREAD_COLOR);
-	
-
+	capture.open("1.mp4");
+	if (!capture.isOpened()) {
+		printf("cv:open could not open file...\n");
+	}
 
 	
 	
@@ -323,7 +404,7 @@ int main(int argc, char * argv[])
 	printf("============================================\n");
 	
 	
-	avformat_alloc_output_context2(&ofmt_ctx_v, NULL, "rtp", "rtp://192.168.101.129:5004");
+	avformat_alloc_output_context2(&ofmt_ctx_v, NULL, "rtp", "rtp://192.168.101.144:5004");
 	if(!ofmt_ctx_v)
 	{
 		printf("avformat_alloc_output_context2 error\n");
@@ -347,8 +428,11 @@ int main(int argc, char * argv[])
 		printf("avcodec_alloc_context3 error\n");
 		return -1;
 	}
-	enc_ctx->height = dec_ctx->height;
-	enc_ctx->width = dec_ctx->width;
+	//enc_ctx->height = dec_ctx->height;
+	//enc_ctx->width = dec_ctx->width;
+	
+	enc_ctx->height = 1040;
+	enc_ctx->width = 480;
 	
 	enc_ctx->sample_aspect_ratio = dec_ctx->sample_aspect_ratio;
 	
@@ -388,7 +472,7 @@ int main(int argc, char * argv[])
 	//printf("!!!!!!!!!!!!!!!!!!!dec_ctx time_base = %d/%d\n",channel->dec_ctx->time_base.num,channel->dec_ctx->time_base.den);
 	
 	if (!(ofmt_ctx_v->oformat->flags & AVFMT_NOFILE)) {
-		ret = avio_open(&ofmt_ctx_v->pb, "rtp://192.168.101.144:5004", AVIO_FLAG_WRITE);
+		ret = avio_open(&ofmt_ctx_v->pb, "rtp://192.168.101.155:5004", AVIO_FLAG_WRITE);
 		if (ret < 0) {
 			printf("avio_open error \n");
 			return -1;
@@ -403,19 +487,23 @@ int main(int argc, char * argv[])
 	char sdp[16384];
 	av_sdp_create(&ofmt_ctx_v, 1, sdp, sizeof(sdp));
 	printf("sdp:\n%s",sdp);
-	av_dump_format(ofmt_ctx_v, 0, "rtp://192.168.101.144:5004", 1);
+	av_dump_format(ofmt_ctx_v, 0, "rtp://192.168.101.155:5004", 1);
 	
 	AVPacket enc_pkt;
 	
+	char error[1024];
 	while(1)
 	{
 		if ((ret = av_read_frame(p_ifmt_ctx_v, &packet)) < 0)
 		{
+			av_strerror(ret,error,sizeof(error));
+			printf("av_read_frame ret=%d  %s\n ",ret,error);
 			break;
 		}
 		//printf("packet \n ");
 		AVFrame *frame = av_frame_alloc();
 		if (!frame) {
+			printf("av_frame_alloc \n ");
 			break;
 		}
 		//av_frame_make_writable(frame);
@@ -428,6 +516,7 @@ int main(int argc, char * argv[])
 			cv::Mat prossed = avframeToCvmat(frame);
 			//cvmatToAvframe(&prossed,frame);
 			//AVFrame *frame1 = cvmatToAvframe(&prossed,NULL);
+			//printf("format=%d\n",frame->format);
 			AVFrame *frame1 = cvmat_to_avframe(prossed,frame->format);
 			//saveAsJPEG(frame1, frame1->width, frame1->height, 1000+count++);
 			frame1->pts = frame->pts;
@@ -448,7 +537,9 @@ int main(int argc, char * argv[])
 			while (ret >= 0) {
 				ret = avcodec_receive_packet(enc_ctx, &enc_pkt);
 				if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+				{
 					break;
+				}
 				else if (ret < 0) {
 					printf("Error during encoding\n");
 					break;
