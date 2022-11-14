@@ -1,8 +1,12 @@
 # ffmpeg_recv_send_rtp
+基于ffmpeg、opencv编辑rtp视频流，示例代码。
 
+# 说明
 ffmpeg_recv_send_rtp：作为中间层接收编辑RTP视频流并推流。【接收RTP视频流->解码->编辑(opencv)->编码->发送 RTP视频流】
 
-rtp发送端->ffmpeg_recv_send_rtp(IP地址192.168.141.133)->rtp播放端(IP地址192.168.101.144)
+
+rtp发送端->ffmpeg_recv_send_rtp(IP地址192.168.141.133)->rtp播放端(IP地址192.168.101.*)
+
 
 发送端命令：
 
@@ -18,7 +22,7 @@ ffplay.exe -protocol_whitelist file,rtp,udp   -i video.sdp
 
 
 
-注意点：
+# 注意点
 
 1.ffmpeg 输入上下文需要 把rtp、udp添加到白名单，就像ffplay播放rtp视频流命令需要如此写：ffplay.exe -protocol_whitelist file,rtp,udp -i video.sdp 。
 
