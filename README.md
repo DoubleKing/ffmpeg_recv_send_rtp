@@ -8,15 +8,17 @@ ffmpeg_recv_send_rtp：作为中间层接收编辑RTP视频流并推流。【接
 rtp发送端->ffmpeg_recv_send_rtp(IP地址192.168.141.133)->rtp播放端(IP地址192.168.101.*)
 
 
-发送端命令：
+# 发送端命令
 
 ffmpeg     -re     -fflags +genpts     -i 111.mp4     -an     -c:v libx264     -f rtp     -sdp_file video.sdp     "rtp://192.168.141.133:5004"
 
 
 
-播放端命令：
+# 播放端命令
 
 ffplay.exe -protocol_whitelist file,rtp,udp   -i video.sdp
+
+也可以用vlc等工具播放
 
 
 
